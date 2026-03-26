@@ -133,12 +133,15 @@ jobs:
           echo "Generated version: $VERSION"
 
       - name: Build application
+        id: build
         run: |
+          echo "build_start_time=$(date -u +%s)" >> $GITHUB_OUTPUT
           npm ci --production
           mkdir -p dist
           cp -r src/ dist/
           cp -r node_modules/ dist/
           cp package.json dist/
+          echo "build_end_time=$(date -u +%s)" >> $GITHUB_OUTPUT
 
       - name: Create artifact package
         run: |
@@ -162,6 +165,8 @@ jobs:
           url: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}
           version: ${{ steps.version.outputs.version }}
           type: npm-package
+          # Label to identify this as the primary build job for dashboard metrics
+          label: kind:build
 
       - name: Add Labels to Artifact
         uses: cloudbees-io-gha/label-artifact-version@v1
