@@ -241,7 +241,7 @@ To test change failure rate metrics, you can intentionally fail a deployment:
 ### Deploy Jobs
 - Downloads build artifact
 - Simulates deployment (customize for real deployments)
-- Registers deployed artifact using `cloudbees-io-gha/register-deployed-artifact@v1`
+- Registers deployed artifact using `cloudbees-io-gha/register-deployed-artifact`
 - **This is the key action for DORA metrics!**
 - Publishes deployment evidence
 
@@ -269,18 +269,18 @@ Registers build artifacts for traceability.
     type: npm-package
 ```
 
-### `cloudbees-io-gha/register-deployed-artifact@v1`
-**NEW** (Phase 1): Registers deployments for DORA metrics tracking.
+### `cloudbees-io-gha/register-deployed-artifact`
+Registers deployments for DORA metrics tracking.
 
 ```yaml
-- uses: cloudbees-io-gha/register-deployed-artifact@v1
+- uses: cloudbees-io-gha/register-deployed-artifact
   with:
     artifact-id: ${{ needs.build.outputs.artifact_id }}
-    environment: production
-    version: ${{ needs.build.outputs.version }}
+    target-environment: production
+    labels: automated-deployment
 ```
 
-**Note**: This action is part of the Phase 1 epic implementation. If the action name differs or is not yet available, see `NOTES.md` for alternatives including API-based registration.
+**Note**: Use without version tag. The `target-environment` parameter should match environments configured in CloudBees Unify.
 
 ### `cloudbees-io-gha/label-artifact-version@v1`
 Adds labels to artifacts for filtering and organization.

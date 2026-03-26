@@ -9,16 +9,16 @@ These actions are used in the workflow and are known to exist:
 - ✅ `cloudbees-io-gha/register-build-artifact@v3` - Register build artifacts
 - ✅ `cloudbees-io-gha/label-artifact-version@v1` - Add labels to artifacts
 - ✅ `cloudbees-io-gha/publish-evidence-item@v2` - Publish evidence
+- ✅ `cloudbees-io-gha/register-deployed-artifact` - Register deployments (no version tag)
 
-### Phase 1 - Deployment Registration Action
+### Deployment Registration Action
 
-The workflow uses `cloudbees-io-gha/register-deployed-artifact@v1` for registering deployments to enable DORA metrics. **This action may still be in development** as part of the Phase 1 epic.
+The workflow uses `cloudbees-io-gha/register-deployed-artifact` (no version tag) for registering deployments to enable DORA metrics.
 
-#### Action Name Variations
-If `register-deployed-artifact` is not available, check for:
-- `cloudbees-io-gha/register-deployment@v1`
-- `cloudbees-io-gha/publish-deployment@v1`
-- `cloudbees-io-gha/track-deployment@v1`
+#### Important Parameters
+- `artifact-id`: The artifact ID from the build job output
+- `target-environment`: Must match environment names in CloudBees Unify (not `environment`)
+- `labels`: Optional labels for filtering/organization
 
 #### Alternative: API-Based Approach
 If no GitHub Action is available yet, you can register deployments via API:

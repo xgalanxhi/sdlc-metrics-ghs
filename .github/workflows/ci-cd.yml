@@ -228,11 +228,11 @@ jobs:
           echo "Deployment completed successfully"
 
       - name: Register Deployed Artifact to Development
-        uses: cloudbees-io-gha/register-deployed-artifact@v1
+        uses: cloudbees-io-gha/register-deployed-artifact
         with:
           artifact-id: ${{ needs.build.outputs.artifact_id }}
-          environment: development
-          version: ${{ needs.build.outputs.version }}
+          target-environment: development
+          labels: automated-deployment
 
   deploy-staging:
     name: Deploy to Staging
@@ -263,11 +263,11 @@ jobs:
           echo "Deployment completed successfully"
 
       - name: Register Deployed Artifact to Staging
-        uses: cloudbees-io-gha/register-deployed-artifact@v1
+        uses: cloudbees-io-gha/register-deployed-artifact
         with:
           artifact-id: ${{ needs.build.outputs.artifact_id }}
-          environment: staging
-          version: ${{ needs.build.outputs.version }}
+          target-environment: staging
+          labels: automated-deployment
 
       - name: Run smoke tests
         run: |
@@ -303,11 +303,11 @@ jobs:
           echo "Production deployment completed successfully"
 
       - name: Register Deployed Artifact to Production
-        uses: cloudbees-io-gha/register-deployed-artifact@v1
+        uses: cloudbees-io-gha/register-deployed-artifact
         with:
           artifact-id: ${{ needs.build.outputs.artifact_id }}
-          environment: production
-          version: ${{ needs.build.outputs.version }}
+          target-environment: production
+          labels: automated-deployment
 
       - name: Post-deployment validation
         run: |
