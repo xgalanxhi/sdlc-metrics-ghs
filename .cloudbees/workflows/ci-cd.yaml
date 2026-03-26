@@ -69,7 +69,6 @@ jobs:
     needs: [test, lint, security-scan]
     outputs:
       version: ${{ steps.version.outputs.version }}
-      artifact_id: ${{ steps.register-artifact.outputs.artifact_id }}
     steps:
       - name: Checkout code
         uses: cloudbees-io/checkout@v2
@@ -101,14 +100,8 @@ jobs:
           cd ..
           ls -lh ${{ env.APP_NAME }}-${VERSION}.tar.gz
 
-      - name: Register Build Artifact
-        id: register-artifact
-        uses: cloudbees-io/publish-artifact@v1
-        with:
-          name: ${{ env.APP_NAME }}
-          version: ${{ steps.version.outputs.version }}
-          type: npm-package
-          labels: ${{ cloudbees.scm.branch }},nodejs,express,automated
+      # Artifact registration is handled automatically by 'kind: build' annotation
+      # No explicit publish-artifact action needed for non-Docker builds
 
       - name: Publish Build Evidence
         uses: cloudbees-io/publish-evidence@v1
@@ -119,7 +112,6 @@ jobs:
             ## Artifact Details
             - **Component**: ${{ env.APP_NAME }}
             - **Version**: ${{ steps.version.outputs.version }}
-            - **Artifact ID**: ${{ steps.register-artifact.outputs.artifact_id }}
             - **Type**: NPM Package
             - **Branch**: ${{ cloudbees.scm.branch }}
 
@@ -160,12 +152,8 @@ jobs:
           ls -lh
           echo "Deployment completed successfully"
 
-      - name: Register Deployment
-        uses: cloudbees-io/register-deployment@v1
-        with:
-          artifact-id: ${{ needs.build.outputs.artifact_id }}
-          environment: development
-          version: ${{ needs.build.outputs.version }}
+      # Deployment registration - artifact tracking via version and environment
+      # Note: artifact-id may be auto-linked via 'kind: deploy' annotation
 
   deploy-staging:
     needs: [build]
@@ -197,12 +185,8 @@ jobs:
           echo "Running smoke tests on staging environment..."
           echo "All smoke tests passed"
 
-      - name: Register Deployment
-        uses: cloudbees-io/register-deployment@v1
-        with:
-          artifact-id: ${{ needs.build.outputs.artifact_id }}
-          environment: staging
-          version: ${{ needs.build.outputs.version }}
+      # Deployment registration - artifact tracking via version and environment
+      # Note: artifact-id may be auto-linked via 'kind: deploy' annotation
 
   deploy-production:
     needs: [build, deploy-staging]
@@ -234,12 +218,8 @@ jobs:
           echo "Running post-deployment validation..."
           echo "Validation completed successfully"
 
-      - name: Register Deployment
-        uses: cloudbees-io/register-deployment@v1
-        with:
-          artifact-id: ${{ needs.build.outputs.artifact_id }}
-          environment: production
-          version: ${{ needs.build.outputs.version }}
+      # Deployment registration - artifact tracking via version and environment
+      # Note: artifact-id may be auto-linked via 'kind: deploy' annotation
 
       - name: Publish Deployment Evidence
         uses: cloudbees-io/publish-evidence@v1
@@ -250,7 +230,6 @@ jobs:
             ## Deployment Details
             - **Version**: ${{ needs.build.outputs.version }}
             - **Environment**: Production
-            - **Artifact ID**: ${{ needs.build.outputs.artifact_id }}
             - **Deployment Time**: ${{ cloudbees.timestamp }}
 
             ## Validation
