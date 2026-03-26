@@ -168,8 +168,7 @@ jobs:
   deploy-dev:
     needs: [build]
     if: cloudbees.scm.branch == 'develop'
-    environment:
-      name: development
+    environment: development
     steps:
       - name: Checkout code
         uses: cloudbees-io/checkout@v1
@@ -198,8 +197,7 @@ jobs:
   deploy-staging:
     needs: [build]
     if: cloudbees.scm.branch == 'main'
-    environment:
-      name: staging
+    environment: staging
     steps:
       - name: Checkout code
         uses: cloudbees-io/checkout@v1
@@ -234,8 +232,7 @@ jobs:
   deploy-production:
     needs: [build, deploy-staging]
     if: cloudbees.scm.branch == 'main'
-    environment:
-      name: production
+    environment: production
     steps:
       - name: Checkout code
         uses: cloudbees-io/checkout@v1
