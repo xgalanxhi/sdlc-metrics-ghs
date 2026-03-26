@@ -101,33 +101,7 @@ jobs:
           ls -lh ${{ env.APP_NAME }}-${VERSION}.tar.gz
 
       # Artifact registration is handled automatically by 'kind: build' annotation
-      # No explicit publish-artifact action needed for non-Docker builds
-
-      - name: Publish Build Evidence
-        uses: cloudbees-io/publish-evidence@v1
-        with:
-          content: |
-            # Build Evidence Report
-
-            ## Artifact Details
-            - **Component**: ${{ env.APP_NAME }}
-            - **Version**: ${{ steps.version.outputs.version }}
-            - **Type**: NPM Package
-            - **Branch**: ${{ cloudbees.scm.branch }}
-
-            ## Build Configuration
-            - **Node Version**: ${{ env.NODE_VERSION }}
-            - **Package**: ${{ env.APP_NAME }}-${{ steps.version.outputs.version }}.tar.gz
-            - **Commit**: ${{ cloudbees.scm.sha }}
-
-            ## Quality Gates
-            - **Unit Tests**: ✅ Passed
-            - **Linting**: ✅ Completed
-            - **Security Scan**: ✅ Completed
-
-            ## Workflow Summary
-            - **Run ID**: ${{ cloudbees.run_id }}
-            - **Triggered by**: ${{ cloudbees.scm.actor }}
+      # Evidence can be added via other mechanisms if needed
 
   deploy-dev:
     needs: [build]
@@ -220,22 +194,3 @@ jobs:
 
       # Deployment registration - artifact tracking via version and environment
       # Note: artifact-id may be auto-linked via 'kind: deploy' annotation
-
-      - name: Publish Deployment Evidence
-        uses: cloudbees-io/publish-evidence@v1
-        with:
-          content: |
-            # Production Deployment Evidence
-
-            ## Deployment Details
-            - **Version**: ${{ needs.build.outputs.version }}
-            - **Environment**: Production
-            - **Deployment Time**: ${{ cloudbees.timestamp }}
-
-            ## Validation
-            - **Smoke Tests**: ✅ Passed
-            - **Post-deployment Checks**: ✅ Passed
-
-            ## Workflow Info
-            - **Run ID**: ${{ cloudbees.run_id }}
-            - **Deployed by**: ${{ cloudbees.scm.actor }}
