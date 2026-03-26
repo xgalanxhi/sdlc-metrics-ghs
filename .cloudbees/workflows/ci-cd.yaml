@@ -111,11 +111,6 @@ jobs:
       - name: Checkout code
         uses: cloudbees-io/checkout@v2
 
-      - name: Download build artifact
-        uses: cloudbees-io/download-artifact@v1
-        with:
-          name: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}
-
       - name: Deploy to Development
         kind: deploy
         uses: docker://node:18
@@ -137,10 +132,6 @@ jobs:
       - name: Checkout code
         uses: cloudbees-io/checkout@v2
 
-      - name: Download build artifact
-        uses: cloudbees-io/download-artifact@v1
-        with:
-          name: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}
 
       - name: Deploy to Staging
         kind: deploy
@@ -169,11 +160,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: cloudbees-io/checkout@v2
-
-      - name: Download build artifact
-        uses: cloudbees-io/download-artifact@v1
-        with:
-          name: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}
 
       - name: Deploy to Production
         kind: deploy
