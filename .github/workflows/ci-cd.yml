@@ -96,8 +96,7 @@ jobs:
         uses: github/codeql-action/analyze@v3
 
 
-  build:
-    name: Build and Register Artifact
+  build-test:
     runs-on: ubuntu-latest
     needs: [test, lint, codeql-scan]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
@@ -207,7 +206,7 @@ jobs:
   deploy-dev:
     name: Deploy to Development
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build-test]
     if: github.ref == 'refs/heads/develop'
     environment:
       name: development
@@ -243,7 +242,7 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: [build]
+    needs: [build-test]
     if: github.ref == 'refs/heads/main'
     environment:
       name: staging
@@ -284,7 +283,7 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [build, deploy-staging]
+    needs: [build-test, deploy-staging]
     if: github.ref == 'refs/heads/main'
     environment:
       name: production
