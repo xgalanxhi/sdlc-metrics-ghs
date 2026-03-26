@@ -97,6 +97,7 @@ jobs:
 
 
   build-test:
+    name: Build and Register Artifact
     runs-on: ubuntu-latest
     needs: [test, lint, codeql-scan]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
