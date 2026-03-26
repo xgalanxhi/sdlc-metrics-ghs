@@ -36,6 +36,7 @@ jobs:
         with:
           test-type: junit
           test-results-location: junit.xml
+          folder-name: test-results
 
   lint:
     needs: [test]
