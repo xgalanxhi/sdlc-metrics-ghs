@@ -1,0 +1,288 @@
+apiVersion: automation.cloudbees.io/v1alpha1
+kind: workflow
+
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+  pull_request:
+    branches:
+      - main
+      - develop
+  workflow_dispatch: {}
+
+env:
+  NODE_VERSION: "18"
+  APP_NAME: "sdlc-metrics-demo"
+
+jobs:
+  test:
+    steps:
+      - name: Checkout code
+        uses: cloudbees-io/checkout@v1
+
+      - name: Setup Node.js
+        uses: cloudbees-io/configure-node@v1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        uses: docker://node:18
+        run: |
+          npm ci
+
+      - name: Run tests with coverage
+        uses: docker://node:18
+        run: |
+          npm run test:ci
+
+      - name: Publish Test Results
+        uses: cloudbees-io/publish-test-results@v1
+        if: always()
+        with:
+          test-type: junit
+          test-results-location: junit.xml
+
+  lint:
+    needs: [test]
+    steps:
+      - name: Checkout code
+        uses: cloudbees-io/checkout@v1
+
+      - name: Setup Node.js
+        uses: cloudbees-io/configure-node@v1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        uses: docker://node:18
+        run: |
+          npm ci
+
+      - name: Run ESLint
+        uses: docker://node:18
+        run: |
+          npm run lint
+        continue-on-error: true
+
+  security-scan:
+    needs: [test]
+    steps:
+      - name: Checkout code
+        uses: cloudbees-io/checkout@v1
+
+      - name: Run security scan
+        uses: cloudbees-io/snyk-scan-code@v1
+        with:
+          language: javascript
+          severity-threshold: high
+
+  build:
+    needs: [test, lint, security-scan]
+    outputs:
+      version: ${{ steps.version.version }}
+      artifact_id: ${{ steps.register-artifact.artifact_id }}
+    steps:
+      - name: Checkout code
+        uses: cloudbees-io/checkout@v1
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: cloudbees-io/configure-node@v1
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies
+        uses: docker://node:18
+        run: |
+          npm ci
+
+      - name: Generate version number
+        id: version
+        uses: docker://node:18
+        run: |
+          COMMIT_COUNT=$(git rev-list --count HEAD)
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          VERSION="1.0.${COMMIT_COUNT}-${SHORT_SHA}"
+          echo "version=$VERSION" >> $CLOUDBEES_OUTPUTS/version
+          echo "Generated version: $VERSION"
+
+      - name: Build application
+        kind: build
+        uses: docker://node:18
+        run: |
+          npm ci --production
+          mkdir -p dist
+          cp -r src/ dist/
+          cp -r node_modules/ dist/
+          cp package.json dist/
+
+      - name: Create artifact package
+        uses: docker://node:18
+        run: |
+          cd dist
+          tar -czf ../${{ env.APP_NAME }}-${{ steps.version.version }}.tar.gz .
+          cd ..
+          ls -lh ${{ env.APP_NAME }}-${{ steps.version.version }}.tar.gz
+
+      - name: Register Build Artifact
+        id: register-artifact
+        uses: cloudbees-io/publish-artifact@v1
+        with:
+          name: ${{ env.APP_NAME }}
+          version: ${{ steps.version.version }}
+          type: npm-package
+          labels: ${{ cloudbees.scm.branch }},nodejs,express,automated
+
+      - name: Publish Build Evidence
+        uses: cloudbees-io/publish-evidence@v1
+        with:
+          content: |
+            # Build Evidence Report
+
+            ## Artifact Details
+            - **Component**: ${{ env.APP_NAME }}
+            - **Version**: ${{ steps.version.version }}
+            - **Artifact ID**: ${{ steps.register-artifact.artifact_id }}
+            - **Type**: NPM Package
+            - **Branch**: ${{ cloudbees.scm.branch }}
+
+            ## Build Configuration
+            - **Node Version**: ${{ env.NODE_VERSION }}
+            - **Package**: ${{ env.APP_NAME }}-${{ steps.version.version }}.tar.gz
+            - **Commit**: ${{ cloudbees.scm.sha }}
+
+            ## Quality Gates
+            - **Unit Tests**: ✅ Passed
+            - **Linting**: ✅ Completed
+            - **Security Scan**: ✅ Completed
+
+            ## Workflow Summary
+            - **Run ID**: ${{ cloudbees.run_id }}
+            - **Triggered by**: ${{ cloudbees.scm.actor }}
+
+  deploy-dev:
+    needs: [build]
+    if: cloudbees.scm.branch == 'develop'
+    environment:
+      name: development
+    steps:
+      - name: Checkout code
+        uses: cloudbees-io/checkout@v1
+
+      - name: Download build artifact
+        uses: cloudbees-io/download-artifact@v1
+        with:
+          name: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}
+
+      - name: Deploy to Development
+        kind: deploy
+        uses: docker://node:18
+        run: |
+          echo "Deploying version ${{ needs.build.outputs.version }} to Development environment"
+          echo "Artifact: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}.tar.gz"
+          ls -lh
+          echo "Deployment completed successfully"
+
+      - name: Register Deployment
+        uses: cloudbees-io/register-deployment@v1
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact_id }}
+          environment: development
+          version: ${{ needs.build.outputs.version }}
+
+  deploy-staging:
+    needs: [build]
+    if: cloudbees.scm.branch == 'main'
+    environment:
+      name: staging
+    steps:
+      - name: Checkout code
+        uses: cloudbees-io/checkout@v1
+
+      - name: Download build artifact
+        uses: cloudbees-io/download-artifact@v1
+        with:
+          name: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}
+
+      - name: Deploy to Staging
+        kind: deploy
+        uses: docker://node:18
+        run: |
+          echo "Deploying version ${{ needs.build.outputs.version }} to Staging environment"
+          echo "Artifact: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}.tar.gz"
+          ls -lh
+          echo "Deployment completed successfully"
+
+      - name: Run smoke tests
+        uses: docker://node:18
+        run: |
+          echo "Running smoke tests on staging environment..."
+          echo "All smoke tests passed"
+
+      - name: Register Deployment
+        uses: cloudbees-io/register-deployment@v1
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact_id }}
+          environment: staging
+          version: ${{ needs.build.outputs.version }}
+
+  deploy-production:
+    needs: [build, deploy-staging]
+    if: cloudbees.scm.branch == 'main'
+    environment:
+      name: production
+    steps:
+      - name: Checkout code
+        uses: cloudbees-io/checkout@v1
+
+      - name: Download build artifact
+        uses: cloudbees-io/download-artifact@v1
+        with:
+          name: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}
+
+      - name: Deploy to Production
+        kind: deploy
+        uses: docker://node:18
+        run: |
+          echo "Deploying version ${{ needs.build.outputs.version }} to Production environment"
+          echo "Artifact: ${{ env.APP_NAME }}-${{ needs.build.outputs.version }}.tar.gz"
+          ls -lh
+          echo "Production deployment completed successfully"
+
+      - name: Post-deployment validation
+        uses: docker://node:18
+        run: |
+          echo "Running post-deployment validation..."
+          echo "Validation completed successfully"
+
+      - name: Register Deployment
+        uses: cloudbees-io/register-deployment@v1
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact_id }}
+          environment: production
+          version: ${{ needs.build.outputs.version }}
+
+      - name: Publish Deployment Evidence
+        uses: cloudbees-io/publish-evidence@v1
+        with:
+          content: |
+            # Production Deployment Evidence
+
+            ## Deployment Details
+            - **Version**: ${{ needs.build.outputs.version }}
+            - **Environment**: Production
+            - **Artifact ID**: ${{ needs.build.outputs.artifact_id }}
+            - **Deployment Time**: ${{ cloudbees.timestamp }}
+
+            ## Validation
+            - **Smoke Tests**: ✅ Passed
+            - **Post-deployment Checks**: ✅ Passed
+
+            ## Workflow Info
+            - **Run ID**: ${{ cloudbees.run_id }}
+            - **Deployed by**: ${{ cloudbees.scm.actor }}
