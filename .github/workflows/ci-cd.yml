@@ -112,7 +112,7 @@ jobs:
       - name: Scan with Gitleaks
         uses: cloudbees-io-gha/gitleaks-scan-publish@v1
         with:
-          cloudbees-pat: ${{ secrets.CloudBees-platform-PAT }}
+          cloudbees-pat: ${{ secrets.CBPAT}}
 
   build-test:
     runs-on: ubuntu-latest
