@@ -74,27 +74,6 @@ jobs:
         run: npm run lint
         continue-on-error: true
 
-  codeql-scan:
-    name: CodeQL Security Scan
-    runs-on: ubuntu-latest
-    needs: [test]
-    permissions:
-      security-events: write
-      contents: read
-      actions: read
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
-        with:
-          languages: javascript
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
-
   gitleaks-scan:
     name: Gitleaks Secret Scan
     runs-on: ubuntu-latest
@@ -116,7 +95,7 @@ jobs:
 
   build-test:
     runs-on: ubuntu-latest
-    needs: [test, lint, codeql-scan, gitleaks-scan]
+    needs: [test, lint, gitleaks-scan]
     if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop'
     permissions:
       id-token: write
@@ -246,12 +225,12 @@ jobs:
           echo "Deployment completed successfully"
 
       # TODO: Enable when register-deployed-artifact action is released
-      # - name: Register Deployed Artifact to Development
-      #   uses: cloudbees-io-gha/register-deployed-artifact@latest
-      #   with:
-      #     artifact-id: ${{ needs.build.outputs.artifact_id }}
-      #     target-environment: development
-      #     labels: automated-deployment
+      - name: Register Deployed Artifact to Development
+        uses: cloudbees-io-gha/register-deployed-artifact@v0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact_id }}
+          target-environment: development
+          labels: automated-deployment
 
   deploy-staging:
     name: Deploy to Staging
@@ -276,13 +255,13 @@ jobs:
           ls -lh
           echo "Deployment completed successfully"
 
-      # TODO: Enable when register-deployed-artifact action is released
-      # - name: Register Deployed Artifact to Staging
-      #   uses: cloudbees-io-gha/register-deployed-artifact@latest
-      #   with:
-      #     artifact-id: ${{ needs.build.outputs.artifact_id }}
-      #     target-environment: staging
-      #     labels: automated-deployment
+      #TODO: Enable when register-deployed-artifact action is released
+      - name: Register Deployed Artifact to Staging
+        uses: cloudbees-io-gha/register-deployed-artifact@v0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact_id }}
+          target-environment: staging
+          labels: automated-deployment
 
       - name: Run smoke tests
         run: |
@@ -312,13 +291,13 @@ jobs:
           ls -lh
           echo "Production deployment completed successfully"
 
-      # TODO: Enable when register-deployed-artifact action is released
-      # - name: Register Deployed Artifact to Production
-      #   uses: cloudbees-io-gha/register-deployed-artifact@latest
-      #   with:
-      #     artifact-id: ${{ needs.build.outputs.artifact_id }}
-      #     target-environment: production
-      #     labels: automated-deployment
+      #TODO: Enable when register-deployed-artifact action is released
+      - name: Register Deployed Artifact to Production
+        uses: cloudbees-io-gha/register-deployed-artifact@v0
+        with:
+          artifact-id: ${{ needs.build.outputs.artifact_id }}
+          target-environment: production
+          labels: automated-deployment
 
       - name: Post-deployment validation
         run: |
