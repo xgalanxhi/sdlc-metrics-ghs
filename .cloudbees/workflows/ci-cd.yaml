@@ -171,4 +171,4 @@ jobs:
           echo "Validation completed successfully"
 
       # Deployment registration - artifact tracking via version and environment
-      # Note: artifact-id may be auto-linked via 'kind: deploy' annotation
+      # Note: artifact-id may be auto-linked via 'kind: deploy' annotation 
