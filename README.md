@@ -22,6 +22,7 @@ This demo application validates the CloudBees Unify metrics functionality, speci
 - **Testing**: Jest with coverage reporting
 - **Linting**: ESLint
 - **Security**: GitHub CodeQL scanning + Gitleaks secret detection
+  
 
 ### CI/CD Pipeline
 The workflow (`.github/workflows/ci-cd.yml`) includes:
