@@ -225,6 +225,7 @@ Registers build artifacts for traceability.
     type: npm-package
 ```
 
+
 ### `cloudbees-io-gha/gitleaks-scan-publish@v1`
 Scans repository for exposed secrets and credentials.
 
