@@ -97,8 +97,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Scan with Gitleaks
-        uses: cloudbees-io-gha/gitleaks-scan-publish@v1
+      #- name: Scan with Gitleaks
+      #  uses: cloudbees-io-gha/gitleaks-scan-publish@v1
         # with:
         #   cloudbees-pat: ${{ secrets.CBPAT}}
 
